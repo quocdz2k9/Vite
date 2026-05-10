@@ -5,8 +5,8 @@ import {
   Alert,
   Box,
   Button,
-  Clipboard,
   ClientOnly,
+  Collapse,
   Container,
   Dialog,
   Flex,
@@ -32,12 +32,76 @@ import {
 
 const API_URL = "/api/cfl"
 
+const PRESET_CODES = [
+  "LIKE500KCFL",
+  "CFLTOP1APP",
+  "CFLTOP1GG",
+  "TOP1APPLECFL",
+  "LK3KUKRLI06W7CTOA",
+  "BAOLAOBLABLA",
+  "SMILEGGCOLEN",
+  "VOTAYSMILEGG",
+  "SMILEGGWIN",
+  "SMILEGGCFL",
+  "SMILEGG500VIEW",
+  "SMILEGGSMILE",
+  "BAOLAO4CFL",
+  "BAOLAOLIVESTR",
+  "BAOLAO10DIEM",
+  "ZOZOMAIDINH",
+  "SIEUNHANZOZO",
+  "ZOZOCFL20",
+  "3000SHOWMCRTV",
+  "XATHUZOZO",
+  "ZOZOREACH500",
+  "CFLGAMEVERSE",
+  "TOANDANF11",
+  "2026CFLKHAIHOA",
+  "HUYENTHOAICF",
+  "LIKE1KOBCFL",
+  "HANOI1KXCAUVS",
+  "HANOI2KX5AUVS",
+  "HANOI3KXCPMMN",
+  "DANANG1KMX92WK",
+  "HCM1KASPO29S",
+  "HCM3KASMCSS",
+  "HCM4KAS99DNS",
+  "YUNY2CCU",
+  "LIVES5CCU",
+  "NANZB2CCU",
+  "APRIL1500FOOL",
+  "APRILFOOL1000",
+  "HAPPYAPRILFOOL",
+  "500VIEWCRTSHW",
+  "BAOLAOFOOL",
+  "BAOLAOSPY",
+  "BAOLAOMASOI",
+  "BAOLAOC4BL",
+  "BAOLAOGRC4",
+  "BAOLAOVUIVE",
+  "CFLSHOOTFORWIN",
+  "CFLFORYOURDAY",
+  "CFLVOTINGTIME",
+  "CRTREACH1000V",
+  "2000LIVEVWCRT",
+  "MEEEELOOO",
+  "VUYPWAMELO",
+  "HELLOMELO",
+  "MELOTOP1CFL",
+  "500MELO500",
+  "HCM2KASP929S",
+  "CFLPLAYNOW",
+  "ZOZOVODICH",
+  "THANTOCCFL01",
+]
+
 const translations: Record<string, string> = {
   Success: "Nhập code thành công!",
   "Active code: campaign status not active":
     "Sự kiện đã kết thúc hoặc chưa bắt đầu",
   "Active code fail": "Mã quà tặng không chính xác",
-  "Active code: other error": "Hệ thống bận, vui lòng thử lại sau",
+  "Active code: other error":
+    "Hệ thống bận, vui lòng thử lại sau",
   "Active code: user code management quantity exhausted":
     "Bạn đã nhận loại mã này rồi",
   "Account not online or not exist":
@@ -46,10 +110,14 @@ const translations: Record<string, string> = {
     "Hết lượt nhập code hôm nay, hãy quay lại vào ngày mai!",
   "Tất cả server đang bận":
     "Máy chủ đang quá tải, vui lòng đợi trong giây lát",
-  "Code expired": "Mã này đã hết hạn sử dụng",
-  "Code limit reached": "Mã này đã đạt giới hạn lượt nhập",
-  "Invalid format": "Định dạng mã không hợp lệ",
-  "Server mismatch": "Mã không áp dụng cho máy chủ này",
+  "Code expired":
+    "Mã này đã hết hạn sử dụng",
+  "Code limit reached":
+    "Mã này đã đạt giới hạn lượt nhập",
+  "Invalid format":
+    "Định dạng mã không hợp lệ",
+  "Server mismatch":
+    "Mã không áp dụng cho máy chủ này",
 }
 
 type LogItem = {
@@ -66,53 +134,78 @@ type SavedRole = {
 }
 
 function ThemeToggle() {
-  const { toggleColorMode, colorMode } = useColorMode()
+  const { toggleColorMode, colorMode } =
+    useColorMode()
 
   return (
-    <ClientOnly fallback={<Skeleton boxSize="8" />}>
+    <ClientOnly
+      fallback={<Skeleton boxSize="8" />}
+    >
       <IconButton
         onClick={toggleColorMode}
         variant="outline"
         size="sm"
         aria-label="theme"
       >
-        {colorMode === "light" ? <LuSun /> : <LuMoon />}
+        {colorMode === "light" ? (
+          <LuSun />
+        ) : (
+          <LuMoon />
+        )}
       </IconButton>
     </ClientOnly>
   )
 }
 
 export default function App() {
-  const [roleId, setRoleId] = useState("")
+  const [roleId, setRoleId] =
+    useState("")
   const [codes, setCodes] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [logs, setLogs] = useState<LogItem[]>([])
+  const [loading, setLoading] =
+    useState(false)
 
-  const [openModal, setOpenModal] = useState(false)
+  const [logs, setLogs] = useState<
+    LogItem[]
+  >([])
+
+  const [openModal, setOpenModal] =
+    useState(false)
+
   const [saveRoleLoading, setSaveRoleLoading] =
     useState(false)
 
-  const [savedRoles, setSavedRoles] = useState<
-    SavedRole[]
-  >([])
+  const [savedRoles, setSavedRoles] =
+    useState<SavedRole[]>([])
 
-  const [newRoleId, setNewRoleId] = useState("")
+  const [newRoleId, setNewRoleId] =
+    useState("")
 
-  const [modalAlert, setModalAlert] = useState<{
-    status: "error" | "warning" | "success"
-    message: string
-  } | null>(null)
+  const [showAllCodes, setShowAllCodes] =
+    useState(false)
+
+  const [modalAlert, setModalAlert] =
+    useState<{
+      status:
+        | "error"
+        | "warning"
+        | "success"
+      message: string
+    } | null>(null)
 
   useEffect(() => {
     const data =
-      localStorage.getItem("saved_roles")
+      localStorage.getItem(
+        "saved_roles",
+      )
 
     if (data) {
       setSavedRoles(JSON.parse(data))
     }
   }, [])
 
-  const saveRoles = (roles: SavedRole[]) => {
+  const saveRoles = (
+    roles: SavedRole[],
+  ) => {
     setSavedRoles(roles)
 
     localStorage.setItem(
@@ -127,7 +220,8 @@ export default function App() {
     if (!newRoleId.trim()) {
       setModalAlert({
         status: "error",
-        message: "Vui lòng nhập ID nhân vật",
+        message:
+          "Vui lòng nhập ID nhân vật",
       })
 
       return
@@ -140,7 +234,8 @@ export default function App() {
     if (exists) {
       setModalAlert({
         status: "warning",
-        message: "ID đã tồn tại trong danh sách",
+        message:
+          "ID đã tồn tại trong danh sách",
       })
 
       return
@@ -175,7 +270,9 @@ export default function App() {
         roleName === newRoleId ||
         String(roleName)
           .toLowerCase()
-          .includes("không được tìm thấy")
+          .includes(
+            "không được tìm thấy",
+          )
       ) {
         setModalAlert({
           status: "error",
@@ -186,20 +283,20 @@ export default function App() {
         return
       }
 
-     const roleItem: SavedRole = {
+      const roleItem: SavedRole = {
         roleId: newRoleId,
         roleName,
         level: String(
-        item?.info?.level ||
-        item?.level ||
-       "",
-      ),
+          item?.info?.level ||
+            item?.level ||
+            "",
+        ),
         serverId: String(
-        item?.serverId ||
-        item?.serverID ||
-       "",
-      ),
-     }
+          item?.serverId ||
+            item?.serverID ||
+            "",
+        ),
+      }
 
       const updated = [
         roleItem,
@@ -218,7 +315,8 @@ export default function App() {
       setModalAlert({
         status: "error",
         message:
-          error?.response?.data?.message ||
+          error?.response?.data
+            ?.message ||
           "Không thể lấy thông tin nhân vật",
       })
     } finally {
@@ -230,7 +328,8 @@ export default function App() {
     roleIdDelete: string,
   ) => {
     const updated = savedRoles.filter(
-      (i) => i.roleId !== roleIdDelete,
+      (i) =>
+        i.roleId !== roleIdDelete,
     )
 
     saveRoles(updated)
@@ -246,7 +345,9 @@ export default function App() {
 
   const handleSubmit = async () => {
     if (!roleId.trim()) {
-      alert("Vui lòng nhập ID nhân vật")
+      alert(
+        "Vui lòng nhập ID nhân vật",
+      )
       return
     }
 
@@ -260,7 +361,9 @@ export default function App() {
     ]
 
     if (!codeList.length) {
-      alert("Vui lòng nhập giftcode")
+      alert(
+        "Vui lòng nhập giftcode",
+      )
       return
     }
 
@@ -271,7 +374,8 @@ export default function App() {
     for (const code of codeList) {
       try {
         const payload = {
-          _targetServerId: Number(roleId),
+          _targetServerId:
+            Number(roleId),
           serverId: "101",
           gameCode: "A49",
           roleId,
@@ -279,30 +383,37 @@ export default function App() {
           code,
         }
 
-        const response = await axios.post(
-          API_URL,
-          payload,
-        )
+        const response =
+          await axios.post(
+            API_URL,
+            payload,
+          )
 
         let rawMessage =
           response.data?.message ||
           response.data?.msg ||
-          response.data?.data?.message ||
+          response.data?.data
+            ?.message ||
           "Success"
 
         let message = rawMessage
 
-        Object.entries(translations).forEach(
-          ([en, vi]) => {
-            if (message.includes(en)) {
-              message = vi
-            }
-          },
-        )
+        Object.entries(
+          translations,
+        ).forEach(([en, vi]) => {
+          if (
+            message.includes(en)
+          ) {
+            message = vi
+          }
+        })
 
         const success =
-          rawMessage.includes("Success") ||
-          message === "Nhập code thành công!"
+          rawMessage.includes(
+            "Success",
+          ) ||
+          message ===
+            "Nhập code thành công!"
 
         setLogs((prev) => [
           {
@@ -314,18 +425,22 @@ export default function App() {
         ])
       } catch (error: any) {
         let message =
-          error?.response?.data?.message ||
-          error?.response?.data?.msg ||
+          error?.response?.data
+            ?.message ||
+          error?.response?.data
+            ?.msg ||
           error?.message ||
           "Lỗi kết nối"
 
-        Object.entries(translations).forEach(
-          ([en, vi]) => {
-            if (message.includes(en)) {
-              message = vi
-            }
-          },
-        )
+        Object.entries(
+          translations,
+        ).forEach(([en, vi]) => {
+          if (
+            message.includes(en)
+          ) {
+            message = vi
+          }
+        })
 
         setLogs((prev) => [
           {
@@ -354,14 +469,18 @@ export default function App() {
           </Heading>
 
           <Text mt="1" opacity={0.7}>
-            Tool nhập giftcode Crossfire Legends
+            Tool nhập giftcode
+            Crossfire Legends
           </Text>
         </Box>
 
         <ThemeToggle />
       </Flex>
 
-      <VStack gap="5" align="stretch">
+      <VStack
+        gap="5"
+        align="stretch"
+      >
         <Box>
           <Flex
             justify="space-between"
@@ -388,7 +507,9 @@ export default function App() {
             placeholder="Nhập ID nhân vật"
             value={roleId}
             onChange={(e) =>
-              setRoleId(e.target.value)
+              setRoleId(
+                e.target.value,
+              )
             }
           />
         </Box>
@@ -403,17 +524,36 @@ export default function App() {
               Danh sách Giftcode
             </Text>
 
-            <Clipboard.Root value={codes}>
-              <Clipboard.Trigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                >
-                  <Clipboard.Indicator />
-                  Copy
-                </Button>
-              </Clipboard.Trigger>
-            </Clipboard.Root>
+            <HStack>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setCodes(
+                    PRESET_CODES.join(
+                      "\n",
+                    ),
+                  )
+                }
+              >
+                <LuPlus />
+                Dùng Code Mẫu
+              </Button>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  setShowAllCodes(
+                    !showAllCodes,
+                  )
+                }
+              >
+                {showAllCodes
+                  ? "Thu gọn"
+                  : "Xem thêm"}
+              </Button>
+            </HStack>
           </Flex>
 
           <Textarea
@@ -422,9 +562,59 @@ export default function App() {
             resize="vertical"
             value={codes}
             onChange={(e) =>
-              setCodes(e.target.value)
+              setCodes(
+                e.target.value,
+              )
             }
           />
+
+          <Collapse
+            in={showAllCodes}
+            animateOpacity
+          >
+            <Box
+              mt="3"
+              p="3"
+              borderWidth="1px"
+              rounded="lg"
+              maxH="220px"
+              overflowY="auto"
+            >
+              <Flex
+                wrap="wrap"
+                gap="2"
+              >
+                {PRESET_CODES.map(
+                  (item) => (
+                    <Button
+                      key={item}
+                      size="xs"
+                      variant="subtle"
+                      onClick={() => {
+                        const current =
+                          codes.trim()
+
+                        if (
+                          current.includes(
+                            item,
+                          )
+                        )
+                          return
+
+                        setCodes(
+                          current
+                            ? `${current}\n${item}`
+                            : item,
+                        )
+                      }}
+                    >
+                      {item}
+                    </Button>
+                  ),
+                )}
+              </Flex>
+            </Box>
+          </Collapse>
         </Box>
 
         <Button
@@ -444,7 +634,10 @@ export default function App() {
           maxH="400px"
           overflowY="auto"
         >
-          <Text fontWeight="700" mb="3">
+          <Text
+            fontWeight="700"
+            mb="3"
+          >
             Nhật ký
           </Text>
 
@@ -455,34 +648,36 @@ export default function App() {
               </Text>
             )}
 
-            {logs.map((log, index) => (
-              <Box
-                key={index}
-                p="3"
-                rounded="lg"
-                borderWidth="1px"
-                borderColor={
-                  log.success
-                    ? "green.500"
-                    : "red.500"
-                }
-              >
-                <Text fontWeight="700">
-                  {log.code}
-                </Text>
-
-                <Text
-                  mt="1"
-                  color={
+            {logs.map(
+              (log, index) => (
+                <Box
+                  key={index}
+                  p="3"
+                  rounded="lg"
+                  borderWidth="1px"
+                  borderColor={
                     log.success
                       ? "green.500"
                       : "red.500"
                   }
                 >
-                  {log.message}
-                </Text>
-              </Box>
-            ))}
+                  <Text fontWeight="700">
+                    {log.code}
+                  </Text>
+
+                  <Text
+                    mt="1"
+                    color={
+                      log.success
+                        ? "green.500"
+                        : "red.500"
+                    }
+                  >
+                    {log.message}
+                  </Text>
+                </Box>
+              ),
+            )}
           </VStack>
         </Box>
       </VStack>
@@ -514,7 +709,8 @@ export default function App() {
                     value={newRoleId}
                     onChange={(e) =>
                       setNewRoleId(
-                        e.target.value,
+                        e.target
+                          .value,
                       )
                     }
                   />
