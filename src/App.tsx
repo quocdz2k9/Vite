@@ -3,6 +3,7 @@ import axios from "axios"
 
 import {
   Alert,
+  Badge,
   Box,
   Button,
   ClientOnly,
@@ -238,6 +239,13 @@ export default function App() {
       (i) => !i.success,
     ).length
   }, [logs])
+
+  const selectedCodes = useMemo(() => {
+    return codes
+      .split("\n")
+      .map((i) => i.trim())
+      .filter(Boolean)
+  }, [codes])
 
   const handleSaveRole = async () => {
     setModalAlert(null)
@@ -544,67 +552,6 @@ export default function App() {
         gap="5"
         align="stretch"
       >
-        <Box
-          borderWidth="1px"
-          rounded="xl"
-          p="4"
-        >
-          <Flex
-            wrap="wrap"
-            gap="4"
-          >
-            <Box flex="1">
-              <Text
-                fontSize="sm"
-                opacity={0.7}
-              >
-                Tổng code
-              </Text>
-
-              <Text
-                fontWeight="700"
-                fontSize="2xl"
-              >
-                {totalCodes}
-              </Text>
-            </Box>
-
-            <Box flex="1">
-              <Text
-                fontSize="sm"
-                opacity={0.7}
-              >
-                Thành công
-              </Text>
-
-              <Text
-                fontWeight="700"
-                fontSize="2xl"
-                color="green.500"
-              >
-                {successCount}
-              </Text>
-            </Box>
-
-            <Box flex="1">
-              <Text
-                fontSize="sm"
-                opacity={0.7}
-              >
-                Thất bại
-              </Text>
-
-              <Text
-                fontWeight="700"
-                fontSize="2xl"
-                color="red.500"
-              >
-                {failCount}
-              </Text>
-            </Box>
-          </Flex>
-        </Box>
-
         <Box>
           <Flex
             justify="space-between"
@@ -733,20 +680,42 @@ export default function App() {
                 gap="2"
               >
                 {PRESET_CODES.map(
-                  (item) => (
-                    <Button
-                      key={item}
-                      size="xs"
-                      variant="subtle"
-                      onClick={() =>
-                        handleAddCode(
-                          item,
-                        )
-                      }
-                    >
-                      {item}
-                    </Button>
-                  ),
+                  (item) => {
+                    const isSelected =
+                      selectedCodes.includes(
+                        item,
+                      )
+
+                    return (
+                      <Button
+                        key={item}
+                        size="xs"
+                        variant={
+                          isSelected
+                            ? "solid"
+                            : "subtle"
+                        }
+                        colorPalette={
+                          isSelected
+                            ? "blue"
+                            : undefined
+                        }
+                        borderWidth="2px"
+                        borderColor={
+                          isSelected
+                            ? "blue.500"
+                            : "transparent"
+                        }
+                        onClick={() =>
+                          handleAddCode(
+                            item,
+                          )
+                        }
+                      >
+                        {item}
+                      </Button>
+                    )
+                  },
                 )}
               </Flex>
             </Box>
@@ -767,17 +736,54 @@ export default function App() {
           borderWidth="1px"
           rounded="xl"
           p="4"
-          maxH="400px"
+          maxH="450px"
           overflowY="auto"
         >
           <Flex
             justify="space-between"
             align="center"
-            mb="3"
+            mb="4"
+            flexWrap="wrap"
+            gap="3"
           >
-            <Text fontWeight="700">
-              Nhật ký
-            </Text>
+            <VStack
+              align="start"
+              gap="1"
+            >
+              <Text fontWeight="700">
+                Nhật ký
+              </Text>
+
+              <HStack wrap="wrap">
+                <Badge
+                  colorPalette="blue"
+                  px="2"
+                  py="1"
+                  rounded="md"
+                >
+                  Tổng: {totalCodes}
+                </Badge>
+
+                <Badge
+                  colorPalette="green"
+                  px="2"
+                  py="1"
+                  rounded="md"
+                >
+                  Thành công:{" "}
+                  {successCount}
+                </Badge>
+
+                <Badge
+                  colorPalette="red"
+                  px="2"
+                  py="1"
+                  rounded="md"
+                >
+                  Thất bại: {failCount}
+                </Badge>
+              </HStack>
+            </VStack>
 
             <Button
               size="sm"
