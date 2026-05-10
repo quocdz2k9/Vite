@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import axios from "axios"
 
 import {
+  Alert,
   Box,
   Button,
   Clipboard,
@@ -21,7 +22,13 @@ import {
 
 import { useColorMode } from "@/components/ui/color-mode"
 
-import { LuMoon, LuSun, LuTrash2 } from "react-icons/lu"
+import {
+  LuCircleAlert,
+  LuMoon,
+  LuPlus,
+  LuSun,
+  LuTrash2,
+} from "react-icons/lu"
 
 const API_URL = "/api/cfl"
 
@@ -82,12 +89,18 @@ export default function App() {
   const [logs, setLogs] = useState<LogItem[]>([])
 
   const [openModal, setOpenModal] = useState(false)
-  const [saveRoleLoading, setSaveRoleLoading] = useState(false)
-  const [savedRoles, setSavedRoles] = useState<SavedRole[]>([])
+  const [saveRoleLoading, setSaveRoleLoading] =
+    useState(false)
+
+  const [savedRoles, setSavedRoles] = useState<
+    SavedRole[]
+  >([])
+
   const [newRoleId, setNewRoleId] = useState("")
 
   useEffect(() => {
-    const data = localStorage.getItem("saved_roles")
+    const data =
+      localStorage.getItem("saved_roles")
 
     if (data) {
       setSavedRoles(JSON.parse(data))
@@ -96,7 +109,11 @@ export default function App() {
 
   const saveRoles = (roles: SavedRole[]) => {
     setSavedRoles(roles)
-    localStorage.setItem("saved_roles", JSON.stringify(roles))
+
+    localStorage.setItem(
+      "saved_roles",
+      JSON.stringify(roles),
+    )
   }
 
   const handleSaveRole = async () => {
@@ -105,12 +122,24 @@ export default function App() {
       return
     }
 
+    const exists = savedRoles.find(
+      (i) => i.roleId === newRoleId,
+    )
+
+    if (exists) {
+      alert("ID đã tồn tại")
+      return
+    }
+
     try {
       setSaveRoleLoading(true)
 
-      const response = await axios.post("/api/get-role", {
-        roleID: newRoleId,
-      })
+      const response = await axios.post(
+        "/api/get-role",
+        {
+          roleID: newRoleId,
+        },
+      )
 
       const data = response.data
 
@@ -120,12 +149,28 @@ export default function App() {
         data?.user ||
         data
 
+      const roleName =
+        roleData?.roleName ||
+        roleData?.name ||
+        ""
+
+      if (
+        !roleName ||
+        roleName === newRoleId ||
+        roleName.includes(
+          "Nhân vật không được tìm thấy",
+        )
+      ) {
+        alert(
+          "Nhân vật không được tìm thấy trong khu vực này. Vui lòng kiểm tra lại thông tin hoặc server tương ứng.",
+        )
+
+        return
+      }
+
       const item: SavedRole = {
         roleId: newRoleId,
-        roleName:
-          roleData?.roleName ||
-          roleData?.name ||
-          newRoleId,
+        roleName,
         level: String(
           roleData?.level ||
             roleData?.lvl ||
@@ -136,15 +181,6 @@ export default function App() {
             roleData?.serverID ||
             "101",
         ),
-      }
-
-      const exists = savedRoles.find(
-        (i) => i.roleId === item.roleId,
-      )
-
-      if (exists) {
-        alert("ID đã tồn tại")
-        return
       }
 
       const updated = [item, ...savedRoles]
@@ -162,16 +198,21 @@ export default function App() {
     }
   }
 
-  const handleDeleteRole = (roleId: string) => {
+  const handleDeleteRole = (
+    roleIdDelete: string,
+  ) => {
     const updated = savedRoles.filter(
-      (i) => i.roleId !== roleId,
+      (i) => i.roleId !== roleIdDelete,
     )
 
     saveRoles(updated)
   }
 
-  const handleSelectRole = (roleId: string) => {
-    setRoleId(roleId)
+  const handleSelectRole = (
+    selectedRoleId: string,
+  ) => {
+    setRoleId(selectedRoleId)
+
     setOpenModal(false)
   }
 
@@ -196,6 +237,7 @@ export default function App() {
     }
 
     setLoading(true)
+
     setLogs([])
 
     for (const code of codeList) {
@@ -305,7 +347,9 @@ export default function App() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setOpenModal(true)}
+              onClick={() =>
+                setOpenModal(true)
+              }
             >
               Danh Sách ID (
               {savedRoles.length} ID)
@@ -319,6 +363,23 @@ export default function App() {
               setRoleId(e.target.value)
             }
           />
+
+          <Alert.Root
+            status="info"
+            mt="3"
+            rounded="lg"
+          >
+            <Alert.Indicator>
+              <LuCircleAlert />
+            </Alert.Indicator>
+
+            <Alert.Content>
+              <Alert.Title fontSize="sm">
+                ID sai hoặc sai server sẽ
+                không thể lưu vào danh sách.
+              </Alert.Title>
+            </Alert.Content>
+          </Alert.Root>
         </Box>
 
         <Box>
@@ -449,74 +510,126 @@ export default function App() {
 
                   <Button
                     colorPalette="blue"
-                    loading={saveRoleLoading}
-                    onClick={handleSaveRole}
+                    loading={
+                      saveRoleLoading
+                    }
+                    onClick={
+                      handleSaveRole
+                    }
                   >
+                    <LuPlus />
                     Lưu ID
                   </Button>
                 </HStack>
+
+                <Alert.Root
+                  status="warning"
+                  rounded="lg"
+                >
+                  <Alert.Indicator>
+                    <LuCircleAlert />
+                  </Alert.Indicator>
+
+                  <Alert.Content>
+                    <Alert.Title fontSize="sm">
+                      Chỉ ID hợp lệ mới được
+                      lưu vào danh sách.
+                    </Alert.Title>
+                  </Alert.Content>
+                </Alert.Root>
 
                 <VStack
                   align="stretch"
                   maxH="400px"
                   overflowY="auto"
                 >
-                  {savedRoles.length === 0 && (
+                  {savedRoles.length ===
+                    0 && (
                     <Text opacity={0.6}>
                       Chưa có ID nào
                     </Text>
                   )}
 
-                  {savedRoles.map((item) => (
-                    <Flex
-                      key={item.roleId}
-                      p="3"
-                      borderWidth="1px"
-                      rounded="lg"
-                      justify="space-between"
-                      align="center"
-                    >
-                      <Box
-                        flex="1"
-                        cursor="pointer"
-                        onClick={() =>
-                          handleSelectRole(
-                            item.roleId,
-                          )
+                  {savedRoles.map(
+                    (item) => (
+                      <Flex
+                        key={
+                          item.roleId
                         }
+                        p="3"
+                        borderWidth="1px"
+                        rounded="lg"
+                        justify="space-between"
+                        align="center"
+                        gap="3"
                       >
-                        <Text fontWeight="700">
-                          {item.roleName}
-                        </Text>
+                        <Box
+                          flex="1"
+                          cursor="pointer"
+                          onClick={() =>
+                            handleSelectRole(
+                              item.roleId,
+                            )
+                          }
+                        >
+                          <Text fontWeight="700">
+                            {
+                              item.roleName
+                            }
+                          </Text>
 
-                        <Text fontSize="sm">
-                          ID: {item.roleId}
-                        </Text>
+                          <Text fontSize="sm">
+                            ID:{" "}
+                            {
+                              item.roleId
+                            }
+                          </Text>
 
-                        <Text fontSize="sm">
-                          Level: {item.level}
-                        </Text>
+                          <Text fontSize="sm">
+                            Level:{" "}
+                            {
+                              item.level
+                            }
+                          </Text>
 
-                        <Text fontSize="sm">
-                          Server:{" "}
-                          {item.serverId}
-                        </Text>
-                      </Box>
+                          <Text fontSize="sm">
+                            Server:{" "}
+                            {
+                              item.serverId
+                            }
+                          </Text>
+                        </Box>
 
-                      <IconButton
-                        aria-label="delete"
-                        variant="ghost"
-                        colorPalette="red"
-                        onClick={() =>
-                          handleDeleteRole(
-                            item.roleId,
-                          )
-                        }
-                      >
-                        <LuTrash2 />
-                      </IconButton>
-                    </Flex>
-                  ))}
+                        <HStack>
+                          <IconButton
+                            aria-label="select"
+                            colorPalette="blue"
+                            variant="ghost"
+                            onClick={() =>
+                              handleSelectRole(
+                                item.roleId,
+                              )
+                            }
+                          >
+                            <LuPlus />
+                          </IconButton>
+
+                          <IconButton
+                            aria-label="delete"
+                            variant="ghost"
+                            colorPalette="red"
+                            onClick={() =>
+                              handleDeleteRole(
+                                item.roleId,
+                              )
+                            }
+                          >
+                            <LuTrash2 />
+                          </IconButton>
+                        </HStack>
+                      </Flex>
+                    ),
+                  )}
                 </VStack>
               </VStack>
             </Dialog.Body>
