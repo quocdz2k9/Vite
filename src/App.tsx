@@ -98,6 +98,11 @@ export default function App() {
 
   const [newRoleId, setNewRoleId] = useState("")
 
+  const [modalAlert, setModalAlert] = useState<{
+    status: "error" | "warning" | "success"
+    message: string
+  } | null>(null)
+
   useEffect(() => {
     const data =
       localStorage.getItem("saved_roles")
@@ -117,8 +122,14 @@ export default function App() {
   }
 
   const handleSaveRole = async () => {
+    setModalAlert(null)
+
     if (!newRoleId.trim()) {
-      alert("Vui lòng nhập ID")
+      setModalAlert({
+        status: "error",
+        message: "Vui lòng nhập ID nhân vật",
+      })
+
       return
     }
 
@@ -127,7 +138,11 @@ export default function App() {
     )
 
     if (exists) {
-      alert("ID đã tồn tại")
+      setModalAlert({
+        status: "warning",
+        message: "ID đã tồn tại trong danh sách",
+      })
+
       return
     }
 
@@ -143,56 +158,65 @@ export default function App() {
 
       const data = response.data
 
-      const roleData =
+      const item =
         data?.data ||
         data?.result ||
         data?.user ||
         data
 
       const roleName =
-        roleData?.roleName ||
-        roleData?.name ||
+        item?.roleName ||
+        item?.name ||
+        item?.nickname ||
         ""
 
       if (
         !roleName ||
         roleName === newRoleId ||
-        roleName.includes(
-          "Nhân vật không được tìm thấy",
-        )
+        String(roleName)
+          .toLowerCase()
+          .includes("không được tìm thấy")
       ) {
-        alert(
-          "Nhân vật không được tìm thấy trong khu vực này. Vui lòng kiểm tra lại thông tin hoặc server tương ứng.",
-        )
+        setModalAlert({
+          status: "error",
+          message:
+            "Nhân vật không được tìm thấy trong khu vực này. Vui lòng kiểm tra lại thông tin hoặc server tương ứng.",
+        })
 
         return
       }
 
-      const item: SavedRole = {
+      const roleItem: SavedRole = {
         roleId: newRoleId,
         roleName,
-        level: String(
-          roleData?.level ||
-            roleData?.lvl ||
-            "0",
-        ),
+        level: String(item?.level || ""),
         serverId: String(
-          roleData?.serverId ||
-            roleData?.serverID ||
-            "101",
+          item?.serverId ||
+            item?.serverID ||
+            "",
         ),
       }
 
-      const updated = [item, ...savedRoles]
+      const updated = [
+        roleItem,
+        ...savedRoles,
+      ]
 
       saveRoles(updated)
 
+      setModalAlert({
+        status: "success",
+        message: "Lưu ID thành công",
+      })
+
       setNewRoleId("")
     } catch (error: any) {
-      alert(
-        error?.response?.data?.message ||
+      setModalAlert({
+        status: "error",
+        message:
+          error?.response?.data?.message ||
           "Không thể lấy thông tin nhân vật",
-      )
+      })
     } finally {
       setSaveRoleLoading(false)
     }
@@ -363,23 +387,6 @@ export default function App() {
               setRoleId(e.target.value)
             }
           />
-
-          <Alert.Root
-            status="info"
-            mt="3"
-            rounded="lg"
-          >
-            <Alert.Indicator>
-              <LuCircleAlert />
-            </Alert.Indicator>
-
-            <Alert.Content>
-              <Alert.Title fontSize="sm">
-                ID sai hoặc sai server sẽ
-                không thể lưu vào danh sách.
-              </Alert.Title>
-            </Alert.Content>
-          </Alert.Root>
         </Box>
 
         <Box>
@@ -522,21 +529,26 @@ export default function App() {
                   </Button>
                 </HStack>
 
-                <Alert.Root
-                  status="warning"
-                  rounded="lg"
-                >
-                  <Alert.Indicator>
-                    <LuCircleAlert />
-                  </Alert.Indicator>
+                {modalAlert && (
+                  <Alert.Root
+                    status={
+                      modalAlert.status
+                    }
+                    rounded="lg"
+                  >
+                    <Alert.Indicator>
+                      <LuCircleAlert />
+                    </Alert.Indicator>
 
-                  <Alert.Content>
-                    <Alert.Title fontSize="sm">
-                      Chỉ ID hợp lệ mới được
-                      lưu vào danh sách.
-                    </Alert.Title>
-                  </Alert.Content>
-                </Alert.Root>
+                    <Alert.Content>
+                      <Alert.Title fontSize="sm">
+                        {
+                          modalAlert.message
+                        }
+                      </Alert.Title>
+                    </Alert.Content>
+                  </Alert.Root>
+                )}
 
                 <VStack
                   align="stretch"
@@ -587,16 +599,14 @@ export default function App() {
 
                           <Text fontSize="sm">
                             Level:{" "}
-                            {
-                              item.level
-                            }
+                            {item.level ||
+                              "?"}
                           </Text>
 
                           <Text fontSize="sm">
                             Server:{" "}
-                            {
-                              item.serverId
-                            }
+                            {item.serverId ||
+                              "?"}
                           </Text>
                         </Box>
 
