@@ -106,22 +106,26 @@ export default function App() {
   const [stats, setStats] = useState({ codeUses: 0, idUses: 0, online: 0 })
   const [modalAlert, setModalAlert] = useState<{ status: "error" | "warning" | "success"; message: string } | null>(null)
 
-  // Load stats from Supabase
+  // 1. Tích hợp Load Stats từ Supabase
   useEffect(() => {
     async function loadStats() {
-      const { count: codeUses } = await supabase
-        .from("cfl_code_logs")
-        .select("*", { count: "exact", head: true })
+      try {
+        const { count: codeUses } = await supabase
+          .from("cfl_code_logs")
+          .select("*", { count: "exact", head: true })
 
-      const { count: idUses } = await supabase
-        .from("cfl_active_users")
-        .select("*", { count: "exact", head: true })
+        const { count: idUses } = await supabase
+          .from("cfl_active_users")
+          .select("*", { count: "exact", head: true })
 
-      setStats({
-        codeUses: codeUses || 0,
-        idUses: idUses || 0,
-        online: idUses || 0,
-      })
+        setStats({
+          codeUses: codeUses || 0,
+          idUses: idUses || 0,
+          online: idUses || 0,
+        })
+      } catch (err) {
+        console.error("Lỗi load stats:", err)
+      }
     }
 
     loadStats()
@@ -193,16 +197,20 @@ export default function App() {
     saveRoles(updated)
   }
 
+  // 2. Tích hợp Tracking khi chọn Role
   const handleSelectRole = async (selectedRoleId: string) => {
     setRoleId(selectedRoleId)
     setOpenModal(false)
 
-    // Log active user to Supabase
-    await supabase.from("cfl_active_users").upsert({
-      role_id: selectedRoleId,
-      role_name: selectedRoleId,
-      last_active: new Date(),
-    })
+    try {
+      await supabase.from("cfl_active_users").upsert({
+        role_id: selectedRoleId,
+        role_name: selectedRoleId,
+        last_active: new Date(),
+      })
+    } catch (err) {
+      console.error("Lỗi tracking active user:", err)
+    }
   }
 
   const handleAddCode = (code: string) => {
@@ -215,8 +223,12 @@ export default function App() {
   }
 
   const handlePasteCodes = async () => {
-    const text = await navigator.clipboard.readText()
-    setCodes(text)
+    try {
+      const text = await navigator.clipboard.readText()
+      setCodes(text)
+    } catch (err) {
+      console.error("Không thể paste:", err)
+    }
   }
 
   const handleUsePresetCodes = () => setCodes(PRESET_CODES.join("\n"))
@@ -261,7 +273,7 @@ export default function App() {
 
         setLogs((prev) => [{ code, success, message }, ...prev])
 
-        // Save log to Supabase
+        // 3. Tích hợp Lưu Log vào Supabase
         await supabase.from("cfl_code_logs").insert({
           code,
           role_id: roleId,
@@ -285,6 +297,7 @@ export default function App() {
         <Box>
           <Heading size="lg">Auto Nhập Code CFL</Heading>
           <Text mt="1" opacity={0.7}>Tool nhập giftcode Crossfire Legends</Text>
+          {/* Thống kê stats */}
           <HStack mt="3" gap="2">
             <Button size="xs" variant="outline">Đã dùng: {stats.codeUses} lượt</Button>
             <Button size="xs" variant="outline">ID dùng: {stats.idUses}</Button>
@@ -328,7 +341,14 @@ export default function App() {
           </Flex>
           <Textarea placeholder="Mỗi dòng 1 giftcode" minH="220px" value={codes} onChange={(e) => setCodes(e.target.value)} />
           
-          <Box mt={showAllCodes ? "3" : "0"} maxH={showAllCodes ? "500px" : "0px"} opacity={showAllCodes ? 1 : 0} overflow="hidden" transition="all 0.35s ease">
+          {/* CSS Transition thay thế cho Collapse của v2 */}
+          <Box 
+            mt={showAllCodes ? "3" : "0"} 
+            maxH={showAllCodes ? "500px" : "0px"} 
+            opacity={showAllCodes ? 1 : 0} 
+            overflow="hidden" 
+            transition="all 0.35s ease"
+          >
             <Box p="3" borderWidth="1px" rounded="lg">
               <Flex wrap="wrap" gap="2">
                 {PRESET_CODES.map((item) => {
@@ -373,7 +393,7 @@ export default function App() {
         </Box>
       </VStack>
 
-      {/* Dialogs (Modals) remain the same but use handleSelectRole for tracking */}
+      {/* Dialog ID List */}
       <Dialog.Root open={openModal} onOpenChange={(e) => setOpenModal(e.open)}>
         <Dialog.Backdrop />
         <Dialog.Positioner>
@@ -415,6 +435,7 @@ export default function App() {
                 <Image src="https://img.vietqr.io/image/VPB-0825966162-compact.png" alt="QR" rounded="xl" />
                 <Box w="100%" p="4" borderWidth="1px" rounded="lg">
                   <Text><b>Ngân Hàng:</b> VP Bank</Text>
+                  <Text><b>CTK:</b> TRAN MINH QUOC</Text>
                   <Text><b>STK:</b> 0825966162</Text>
                   <Button size="sm" mt="2" onClick={() => navigator.clipboard.writeText("0825966162")}>Copy STK</Button>
                 </Box>
