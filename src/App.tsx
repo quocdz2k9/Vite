@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 
 import {
@@ -7,8 +7,10 @@ import {
   Clipboard,
   ClientOnly,
   Container,
+  Dialog,
   Flex,
   Heading,
+  HStack,
   IconButton,
   Input,
   Skeleton,
@@ -19,7 +21,7 @@ import {
 
 import { useColorMode } from "@/components/ui/color-mode"
 
-import { LuMoon, LuSun } from "react-icons/lu"
+import { LuMoon, LuSun, LuTrash2 } from "react-icons/lu"
 
 const API_URL = "/api/cfl"
 
@@ -49,6 +51,13 @@ type LogItem = {
   message: string
 }
 
+type SavedRole = {
+  roleId: string
+  roleName: string
+  level: string
+  serverId: string
+}
+
 function ThemeToggle() {
   const { toggleColorMode, colorMode } = useColorMode()
 
@@ -71,6 +80,100 @@ export default function App() {
   const [codes, setCodes] = useState("")
   const [loading, setLoading] = useState(false)
   const [logs, setLogs] = useState<LogItem[]>([])
+
+  const [openModal, setOpenModal] = useState(false)
+  const [saveRoleLoading, setSaveRoleLoading] = useState(false)
+  const [savedRoles, setSavedRoles] = useState<SavedRole[]>([])
+  const [newRoleId, setNewRoleId] = useState("")
+
+  useEffect(() => {
+    const data = localStorage.getItem("saved_roles")
+
+    if (data) {
+      setSavedRoles(JSON.parse(data))
+    }
+  }, [])
+
+  const saveRoles = (roles: SavedRole[]) => {
+    setSavedRoles(roles)
+    localStorage.setItem("saved_roles", JSON.stringify(roles))
+  }
+
+  const handleSaveRole = async () => {
+    if (!newRoleId.trim()) {
+      alert("Vui lòng nhập ID")
+      return
+    }
+
+    try {
+      setSaveRoleLoading(true)
+
+      const response = await axios.post("/api/get-role", {
+        roleID: newRoleId,
+      })
+
+      const data = response.data
+
+      const roleData =
+        data?.data ||
+        data?.result ||
+        data?.user ||
+        data
+
+      const item: SavedRole = {
+        roleId: newRoleId,
+        roleName:
+          roleData?.roleName ||
+          roleData?.name ||
+          newRoleId,
+        level: String(
+          roleData?.level ||
+            roleData?.lvl ||
+            "0",
+        ),
+        serverId: String(
+          roleData?.serverId ||
+            roleData?.serverID ||
+            "101",
+        ),
+      }
+
+      const exists = savedRoles.find(
+        (i) => i.roleId === item.roleId,
+      )
+
+      if (exists) {
+        alert("ID đã tồn tại")
+        return
+      }
+
+      const updated = [item, ...savedRoles]
+
+      saveRoles(updated)
+
+      setNewRoleId("")
+    } catch (error: any) {
+      alert(
+        error?.response?.data?.message ||
+          "Không thể lấy thông tin nhân vật",
+      )
+    } finally {
+      setSaveRoleLoading(false)
+    }
+  }
+
+  const handleDeleteRole = (roleId: string) => {
+    const updated = savedRoles.filter(
+      (i) => i.roleId !== roleId,
+    )
+
+    saveRoles(updated)
+  }
+
+  const handleSelectRole = (roleId: string) => {
+    setRoleId(roleId)
+    setOpenModal(false)
+  }
 
   const handleSubmit = async () => {
     if (!roleId.trim()) {
@@ -106,7 +209,10 @@ export default function App() {
           code,
         }
 
-        const response = await axios.post(API_URL, payload)
+        const response = await axios.post(
+          API_URL,
+          payload,
+        )
 
         let rawMessage =
           response.data?.message ||
@@ -116,11 +222,13 @@ export default function App() {
 
         let message = rawMessage
 
-        Object.entries(translations).forEach(([en, vi]) => {
-          if (message.includes(en)) {
-            message = vi
-          }
-        })
+        Object.entries(translations).forEach(
+          ([en, vi]) => {
+            if (message.includes(en)) {
+              message = vi
+            }
+          },
+        )
 
         const success =
           rawMessage.includes("Success") ||
@@ -141,11 +249,13 @@ export default function App() {
           error?.message ||
           "Lỗi kết nối"
 
-        Object.entries(translations).forEach(([en, vi]) => {
-          if (message.includes(en)) {
-            message = vi
-          }
-        })
+        Object.entries(translations).forEach(
+          ([en, vi]) => {
+            if (message.includes(en)) {
+              message = vi
+            }
+          },
+        )
 
         setLogs((prev) => [
           {
@@ -163,9 +273,15 @@ export default function App() {
 
   return (
     <Container maxW="2xl" py="10">
-      <Flex justify="space-between" align="center" mb="8">
+      <Flex
+        justify="space-between"
+        align="center"
+        mb="8"
+      >
         <Box>
-          <Heading size="lg">Auto Nhập Code CFL</Heading>
+          <Heading size="lg">
+            Auto Nhập Code CFL
+          </Heading>
 
           <Text mt="1" opacity={0.7}>
             Tool nhập giftcode Crossfire Legends
@@ -177,24 +293,50 @@ export default function App() {
 
       <VStack gap="5" align="stretch">
         <Box>
-          <Text mb="2" fontWeight="600">
-            ID Nhân vật
-          </Text>
+          <Flex
+            justify="space-between"
+            align="center"
+            mb="2"
+          >
+            <Text fontWeight="600">
+              ID Nhân vật
+            </Text>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setOpenModal(true)}
+            >
+              Danh Sách ID (
+              {savedRoles.length} ID)
+            </Button>
+          </Flex>
 
           <Input
             placeholder="Nhập ID nhân vật"
             value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
+            onChange={(e) =>
+              setRoleId(e.target.value)
+            }
           />
         </Box>
 
         <Box>
-          <Flex justify="space-between" align="center" mb="2">
-            <Text fontWeight="600">Danh sách Giftcode</Text>
+          <Flex
+            justify="space-between"
+            align="center"
+            mb="2"
+          >
+            <Text fontWeight="600">
+              Danh sách Giftcode
+            </Text>
 
             <Clipboard.Root value={codes}>
               <Clipboard.Trigger asChild>
-                <Button size="sm" variant="outline">
+                <Button
+                  size="sm"
+                  variant="outline"
+                >
                   <Clipboard.Indicator />
                   Copy
                 </Button>
@@ -207,7 +349,9 @@ export default function App() {
             minH="220px"
             resize="vertical"
             value={codes}
-            onChange={(e) => setCodes(e.target.value)}
+            onChange={(e) =>
+              setCodes(e.target.value)
+            }
           />
         </Box>
 
@@ -216,7 +360,9 @@ export default function App() {
           loading={loading}
           onClick={handleSubmit}
         >
-          {loading ? "Đang nhập code..." : "Bắt đầu nhập"}
+          {loading
+            ? "Đang nhập code..."
+            : "Bắt đầu nhập"}
         </Button>
 
         <Box
@@ -232,7 +378,9 @@ export default function App() {
 
           <VStack align="stretch">
             {logs.length === 0 && (
-              <Text opacity={0.6}>Chưa có dữ liệu</Text>
+              <Text opacity={0.6}>
+                Chưa có dữ liệu
+              </Text>
             )}
 
             {logs.map((log, index) => (
@@ -241,13 +389,23 @@ export default function App() {
                 p="3"
                 rounded="lg"
                 borderWidth="1px"
-                borderColor={log.success ? "green.500" : "red.500"}
+                borderColor={
+                  log.success
+                    ? "green.500"
+                    : "red.500"
+                }
               >
-                <Text fontWeight="700">{log.code}</Text>
+                <Text fontWeight="700">
+                  {log.code}
+                </Text>
 
                 <Text
                   mt="1"
-                  color={log.success ? "green.500" : "red.500"}
+                  color={
+                    log.success
+                      ? "green.500"
+                      : "red.500"
+                  }
                 >
                   {log.message}
                 </Text>
@@ -256,6 +414,125 @@ export default function App() {
           </VStack>
         </Box>
       </VStack>
+
+      <Dialog.Root
+        open={openModal}
+        onOpenChange={(e) =>
+          setOpenModal(e.open)
+        }
+      >
+        <Dialog.Backdrop />
+
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>
+              <Dialog.Title>
+                Danh Sách ID
+              </Dialog.Title>
+            </Dialog.Header>
+
+            <Dialog.Body>
+              <VStack
+                align="stretch"
+                gap="4"
+              >
+                <HStack>
+                  <Input
+                    placeholder="Nhập ID nhân vật"
+                    value={newRoleId}
+                    onChange={(e) =>
+                      setNewRoleId(
+                        e.target.value,
+                      )
+                    }
+                  />
+
+                  <Button
+                    colorPalette="blue"
+                    loading={saveRoleLoading}
+                    onClick={handleSaveRole}
+                  >
+                    Lưu ID
+                  </Button>
+                </HStack>
+
+                <VStack
+                  align="stretch"
+                  maxH="400px"
+                  overflowY="auto"
+                >
+                  {savedRoles.length === 0 && (
+                    <Text opacity={0.6}>
+                      Chưa có ID nào
+                    </Text>
+                  )}
+
+                  {savedRoles.map((item) => (
+                    <Flex
+                      key={item.roleId}
+                      p="3"
+                      borderWidth="1px"
+                      rounded="lg"
+                      justify="space-between"
+                      align="center"
+                    >
+                      <Box
+                        flex="1"
+                        cursor="pointer"
+                        onClick={() =>
+                          handleSelectRole(
+                            item.roleId,
+                          )
+                        }
+                      >
+                        <Text fontWeight="700">
+                          {item.roleName}
+                        </Text>
+
+                        <Text fontSize="sm">
+                          ID: {item.roleId}
+                        </Text>
+
+                        <Text fontSize="sm">
+                          Level: {item.level}
+                        </Text>
+
+                        <Text fontSize="sm">
+                          Server:{" "}
+                          {item.serverId}
+                        </Text>
+                      </Box>
+
+                      <IconButton
+                        aria-label="delete"
+                        variant="ghost"
+                        colorPalette="red"
+                        onClick={() =>
+                          handleDeleteRole(
+                            item.roleId,
+                          )
+                        }
+                      >
+                        <LuTrash2 />
+                      </IconButton>
+                    </Flex>
+                  ))}
+                </VStack>
+              </VStack>
+            </Dialog.Body>
+
+            <Dialog.Footer>
+              <Button
+                onClick={() =>
+                  setOpenModal(false)
+                }
+              >
+                Đóng
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
     </Container>
   )
 }
