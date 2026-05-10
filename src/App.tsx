@@ -27,6 +27,7 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuCircleAlert,
+  LuClipboard,
   LuHeartHandshake,
   LuMoon,
   LuPlus,
@@ -397,8 +398,15 @@ export default function App() {
       .map((i) => i.trim())
       .filter(Boolean)
 
-    if (currentCodes.includes(code))
+    if (currentCodes.includes(code)) {
+      const updated = currentCodes.filter(
+        (i) => i !== code,
+      )
+
+      setCodes(updated.join("\n"))
+
       return
+    }
 
     setCodes(
       [...currentCodes, code].join(
@@ -406,6 +414,14 @@ export default function App() {
       ),
     )
   }
+
+  const handlePasteCodes =
+    async () => {
+      const text =
+        await navigator.clipboard.readText()
+
+      setCodes(text)
+    }
 
   const handleUsePresetCodes = () => {
     setCodes(PRESET_CODES.join("\n"))
@@ -464,6 +480,10 @@ export default function App() {
             API_URL,
             payload,
           )
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, 700),
+        )
 
         let rawMessage =
           response.data?.message ||
@@ -627,6 +647,17 @@ export default function App() {
               >
                 <LuPlus />
                 Dùng Code Mẫu
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={
+                  handlePasteCodes
+                }
+              >
+                <LuClipboard />
+                Paste
               </Button>
 
               <Button
@@ -944,11 +975,22 @@ export default function App() {
                           item.roleId
                         }
                         p="3"
-                        borderWidth="1px"
                         rounded="lg"
                         justify="space-between"
                         align="center"
                         gap="3"
+                        borderColor={
+                          roleId ===
+                          item.roleId
+                            ? "blue.500"
+                            : undefined
+                        }
+                        borderWidth={
+                          roleId ===
+                          item.roleId
+                            ? "2px"
+                            : "1px"
+                        }
                       >
                         <Box
                           flex="1"
@@ -1080,6 +1122,17 @@ export default function App() {
                       <b>STK:</b>{" "}
                       0825966162
                     </Text>
+
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          "0825966162",
+                        )
+                      }}
+                    >
+                      Copy STK
+                    </Button>
                   </VStack>
                 </Box>
               </VStack>
