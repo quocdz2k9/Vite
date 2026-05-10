@@ -6,7 +6,6 @@ import {
   Box,
   Button,
   ClientOnly,
-  Collapse,
   Container,
   Dialog,
   Flex,
@@ -23,6 +22,8 @@ import {
 import { useColorMode } from "@/components/ui/color-mode"
 
 import {
+  LuChevronDown,
+  LuChevronUp,
   LuCircleAlert,
   LuMoon,
   LuPlus,
@@ -160,7 +161,10 @@ function ThemeToggle() {
 export default function App() {
   const [roleId, setRoleId] =
     useState("")
-  const [codes, setCodes] = useState("")
+
+  const [codes, setCodes] =
+    useState("")
+
   const [loading, setLoading] =
     useState(false)
 
@@ -171,8 +175,10 @@ export default function App() {
   const [openModal, setOpenModal] =
     useState(false)
 
-  const [saveRoleLoading, setSaveRoleLoading] =
-    useState(false)
+  const [
+    saveRoleLoading,
+    setSaveRoleLoading,
+  ] = useState(false)
 
   const [savedRoles, setSavedRoles] =
     useState<SavedRole[]>([])
@@ -263,6 +269,7 @@ export default function App() {
         item?.roleName ||
         item?.name ||
         item?.nickname ||
+        item?.info?.charac_name ||
         ""
 
       if (
@@ -284,16 +291,23 @@ export default function App() {
       }
 
       const roleItem: SavedRole = {
-        roleId: newRoleId,
+        roleId: String(
+          item?.roleID ||
+            item?.roleId ||
+            newRoleId,
+        ),
+
         roleName,
+
         level: String(
           item?.info?.level ||
             item?.level ||
             "",
         ),
+
         serverId: String(
-          item?.serverId ||
-            item?.serverID ||
+          item?.serverID ||
+            item?.serverId ||
             "",
         ),
       }
@@ -341,6 +355,28 @@ export default function App() {
     setRoleId(selectedRoleId)
 
     setOpenModal(false)
+  }
+
+  const handleAddCode = (
+    code: string,
+  ) => {
+    const currentCodes = codes
+      .split("\n")
+      .map((i) => i.trim())
+      .filter(Boolean)
+
+    if (currentCodes.includes(code))
+      return
+
+    setCodes(
+      [...currentCodes, code].join(
+        "\n",
+      ),
+    )
+  }
+
+  const handleUsePresetCodes = () => {
+    setCodes(PRESET_CODES.join("\n"))
   }
 
   const handleSubmit = async () => {
@@ -519,6 +555,8 @@ export default function App() {
             justify="space-between"
             align="center"
             mb="2"
+            gap="3"
+            flexWrap="wrap"
           >
             <Text fontWeight="600">
               Danh sách Giftcode
@@ -527,13 +565,10 @@ export default function App() {
             <HStack>
               <Button
                 size="sm"
+                colorPalette="blue"
                 variant="outline"
-                onClick={() =>
-                  setCodes(
-                    PRESET_CODES.join(
-                      "\n",
-                    ),
-                  )
+                onClick={
+                  handleUsePresetCodes
                 }
               >
                 <LuPlus />
@@ -549,9 +584,17 @@ export default function App() {
                   )
                 }
               >
-                {showAllCodes
-                  ? "Thu gọn"
-                  : "Xem thêm"}
+                {showAllCodes ? (
+                  <>
+                    <LuChevronUp />
+                    Thu gọn
+                  </>
+                ) : (
+                  <>
+                    <LuChevronDown />
+                    Xem thêm
+                  </>
+                )}
               </Button>
             </HStack>
           </Flex>
@@ -568,17 +611,23 @@ export default function App() {
             }
           />
 
-          <Collapse
-            in={showAllCodes}
-            animateOpacity
+          <Box
+            mt={showAllCodes ? "3" : "0"}
+            maxH={
+              showAllCodes
+                ? "500px"
+                : "0px"
+            }
+            opacity={
+              showAllCodes ? 1 : 0
+            }
+            overflow="hidden"
+            transition="all 0.35s ease"
           >
             <Box
-              mt="3"
               p="3"
               borderWidth="1px"
               rounded="lg"
-              maxH="220px"
-              overflowY="auto"
             >
               <Flex
                 wrap="wrap"
@@ -590,23 +639,11 @@ export default function App() {
                       key={item}
                       size="xs"
                       variant="subtle"
-                      onClick={() => {
-                        const current =
-                          codes.trim()
-
-                        if (
-                          current.includes(
-                            item,
-                          )
+                      onClick={() =>
+                        handleAddCode(
+                          item,
                         )
-                          return
-
-                        setCodes(
-                          current
-                            ? `${current}\n${item}`
-                            : item,
-                        )
-                      }}
+                      }
                     >
                       {item}
                     </Button>
@@ -614,7 +651,7 @@ export default function App() {
                 )}
               </Flex>
             </Box>
-          </Collapse>
+          </Box>
         </Box>
 
         <Button
