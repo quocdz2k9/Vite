@@ -186,16 +186,20 @@ export default function App() {
         return
       }
 
-      const roleItem: SavedRole = {
+     const roleItem: SavedRole = {
         roleId: newRoleId,
         roleName,
-        level: String(item?.level || ""),
+        level: String(
+        item?.info?.level ||
+        item?.level ||
+       "",
+      ),
         serverId: String(
-          item?.serverId ||
-            item?.serverID ||
-            "",
-        ),
-      }
+        item?.serverId ||
+        item?.serverID ||
+       "",
+      ),
+     }
 
       const updated = [
         roleItem,
