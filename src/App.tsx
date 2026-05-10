@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 
 import {
@@ -220,6 +220,25 @@ export default function App() {
     )
   }
 
+  const totalCodes = useMemo(() => {
+    return codes
+      .split("\n")
+      .map((i) => i.trim())
+      .filter(Boolean).length
+  }, [codes])
+
+  const successCount = useMemo(() => {
+    return logs.filter(
+      (i) => i.success,
+    ).length
+  }, [logs])
+
+  const failCount = useMemo(() => {
+    return logs.filter(
+      (i) => !i.success,
+    ).length
+  }, [logs])
+
   const handleSaveRole = async () => {
     setModalAlert(null)
 
@@ -379,6 +398,14 @@ export default function App() {
     setCodes(PRESET_CODES.join("\n"))
   }
 
+  const handleClearCodes = () => {
+    setCodes("")
+  }
+
+  const handleClearLogs = () => {
+    setLogs([])
+  }
+
   const handleSubmit = async () => {
     if (!roleId.trim()) {
       alert(
@@ -517,6 +544,67 @@ export default function App() {
         gap="5"
         align="stretch"
       >
+        <Box
+          borderWidth="1px"
+          rounded="xl"
+          p="4"
+        >
+          <Flex
+            wrap="wrap"
+            gap="4"
+          >
+            <Box flex="1">
+              <Text
+                fontSize="sm"
+                opacity={0.7}
+              >
+                Tổng code
+              </Text>
+
+              <Text
+                fontWeight="700"
+                fontSize="2xl"
+              >
+                {totalCodes}
+              </Text>
+            </Box>
+
+            <Box flex="1">
+              <Text
+                fontSize="sm"
+                opacity={0.7}
+              >
+                Thành công
+              </Text>
+
+              <Text
+                fontWeight="700"
+                fontSize="2xl"
+                color="green.500"
+              >
+                {successCount}
+              </Text>
+            </Box>
+
+            <Box flex="1">
+              <Text
+                fontSize="sm"
+                opacity={0.7}
+              >
+                Thất bại
+              </Text>
+
+              <Text
+                fontWeight="700"
+                fontSize="2xl"
+                color="red.500"
+              >
+                {failCount}
+              </Text>
+            </Box>
+          </Flex>
+        </Box>
+
         <Box>
           <Flex
             justify="space-between"
@@ -562,7 +650,7 @@ export default function App() {
               Danh sách Giftcode
             </Text>
 
-            <HStack>
+            <HStack flexWrap="wrap">
               <Button
                 size="sm"
                 colorPalette="blue"
@@ -573,6 +661,17 @@ export default function App() {
               >
                 <LuPlus />
                 Dùng Code Mẫu
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                colorPalette="red"
+                onClick={
+                  handleClearCodes
+                }
+              >
+                Xóa toàn bộ code
               </Button>
 
               <Button
@@ -671,12 +770,26 @@ export default function App() {
           maxH="400px"
           overflowY="auto"
         >
-          <Text
-            fontWeight="700"
+          <Flex
+            justify="space-between"
+            align="center"
             mb="3"
           >
-            Nhật ký
-          </Text>
+            <Text fontWeight="700">
+              Nhật ký
+            </Text>
+
+            <Button
+              size="sm"
+              variant="outline"
+              colorPalette="red"
+              onClick={
+                handleClearLogs
+              }
+            >
+              Xóa nhật ký
+            </Button>
+          </Flex>
 
           <VStack align="stretch">
             {logs.length === 0 && (
