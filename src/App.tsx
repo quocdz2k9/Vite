@@ -13,6 +13,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  Image,
   Input,
   Skeleton,
   Text,
@@ -26,6 +27,7 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuCircleAlert,
+  LuHeartHandshake,
   LuMoon,
   LuPlus,
   LuSun,
@@ -174,6 +176,9 @@ export default function App() {
   >([])
 
   const [openModal, setOpenModal] =
+    useState(false)
+
+  const [openDonate, setOpenDonate] =
     useState(false)
 
   const [
@@ -545,7 +550,21 @@ export default function App() {
           </Text>
         </Box>
 
-        <ThemeToggle />
+        <HStack>
+          <Button
+            size="sm"
+            colorPalette="pink"
+            variant="outline"
+            onClick={() =>
+              setOpenDonate(true)
+            }
+          >
+            <LuHeartHandshake />
+            Donate
+          </Button>
+
+          <ThemeToggle />
+        </HStack>
       </Flex>
 
       <VStack
@@ -1004,6 +1023,72 @@ export default function App() {
               <Button
                 onClick={() =>
                   setOpenModal(false)
+                }
+              >
+                Đóng
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={openDonate}
+        onOpenChange={(e) =>
+          setOpenDonate(e.open)
+        }
+      >
+        <Dialog.Backdrop />
+
+        <Dialog.Positioner>
+          <Dialog.Content>
+            <Dialog.Header>
+              <Dialog.Title>
+                Ủng hộ Admin để duy trì
+              </Dialog.Title>
+            </Dialog.Header>
+
+            <Dialog.Body>
+              <VStack gap="4">
+                <Image
+                  src="https://img.vietqr.io/image/VPB-0825966162-compact.png"
+                  alt="QR Donate"
+                  rounded="xl"
+                />
+
+                <Box
+                  w="100%"
+                  p="4"
+                  borderWidth="1px"
+                  rounded="lg"
+                >
+                  <VStack
+                    align="start"
+                    gap="2"
+                  >
+                    <Text>
+                      <b>Ngân Hàng:</b>{" "}
+                      VP Bank
+                    </Text>
+
+                    <Text>
+                      <b>CTK:</b>{" "}
+                      TRAN MINH QUOC
+                    </Text>
+
+                    <Text>
+                      <b>STK:</b>{" "}
+                      0825966162
+                    </Text>
+                  </VStack>
+                </Box>
+              </VStack>
+            </Dialog.Body>
+
+            <Dialog.Footer>
+              <Button
+                onClick={() =>
+                  setOpenDonate(false)
                 }
               >
                 Đóng
